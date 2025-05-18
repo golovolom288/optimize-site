@@ -1,7 +1,8 @@
 from django.db import models
-from django.db.models import Count
+from django.db.models import Count, Prefetch
 from django.urls import reverse
 from django.contrib.auth.models import User
+import more_itertools
 
 
 class TagQuerySet(models.QuerySet):
@@ -18,10 +19,31 @@ class PostQuerySet(models.QuerySet):
         return popular_posts
 
     def fetch_with_comments_count(self):
-        posts_with_comments = Post.objects.filter(id__in=[post.id for post in self]).annotate(comments_count=Count('comments'))
+        posts_with_comments = Post.objects.filter(id__in=self).annotate(comments_count=Count('comments'))
         id_comments = dict(posts_with_comments.values_list("id", "comments_count"))
         for post in self:
             post.comments_count = id_comments[post.id]
+        return self
+
+    def fresh(self):
+        fresh_posts = self.order_by("-published_at")
+        return fresh_posts
+
+    def fetch_with_tags(self):
+        posts_counts_for_tags = Post.objects.filter(id__in=self).prefetch_related(
+            Prefetch("tags",
+                     queryset=Tag.objects.annotate(
+                         posts_with_tag=Count('posts')
+                        )
+                     )
+        )
+        for post in self:
+            tags = [post_with_tags.tags for post_with_tags in posts_counts_for_tags if post_with_tags.id == post.id]
+            for tag in more_itertools.first(tags).all():
+                post.total_tags = {
+                    "title": tag.title,
+                    "posts_with_tag": tag.posts_with_tag
+                }
         return self
 
 

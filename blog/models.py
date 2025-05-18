@@ -7,8 +7,22 @@ from django.contrib.auth.models import User
 class TagQuerySet(models.QuerySet):
 
     def popular(self):
-        popular_tags = Tag.objects.annotate(related_posts_count=Count('posts')).order_by("-related_posts_count")
+        popular_tags = self.annotate(related_posts_count=Count('posts')).order_by("-related_posts_count")
         return popular_tags
+
+
+class PostQuerySet(models.QuerySet):
+
+    def popular(self):
+        popular_posts = self.annotate(likes_count=Count('likes', distinct=True)).order_by("-likes_count")
+        return popular_posts
+
+    def fetch_with_comments_count(self):
+        posts_with_comments = Post.objects.filter(id__in=[post.id for post in self]).annotate(comments_count=Count('comments'))
+        id_comments = dict(posts_with_comments.values_list("id", "comments_count"))
+        for post in self:
+            post.comments_count = id_comments[post.id]
+        return self
 
 
 class Post(models.Model):
@@ -16,6 +30,7 @@ class Post(models.Model):
     text = models.TextField('Текст')
     slug = models.SlugField('Название в виде url', max_length=200)
     image = models.ImageField('Картинка')
+    objects = PostQuerySet.as_manager()
     published_at = models.DateTimeField('Дата и время публикации')
     author = models.ForeignKey(
         User,

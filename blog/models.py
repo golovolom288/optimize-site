@@ -57,7 +57,9 @@ class Post(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name='Автор',
-        limit_choices_to={'is_staff': True})
+        limit_choices_to={'is_staff': True},
+        related_name="post"
+    )
     likes = models.ManyToManyField(
         User,
         related_name='liked_posts',
@@ -109,7 +111,9 @@ class Comment(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Автор')
+        verbose_name='Автор',
+        related_name='comments'
+    )
 
     text = models.TextField('Текст комментария')
     published_at = models.DateTimeField('Дата и время публикации')

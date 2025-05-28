@@ -1,15 +1,6 @@
-from django.contrib.auth.models import User
 from django.db.models import Count
 from django.shortcuts import render
 from blog.models import Comment, Post, Tag
-
-
-def get_likes_count(post):
-    return post.likes.count()
-
-
-def get_related_posts_count(tag):
-    return tag.posts.count()
 
 
 def serialize_post(post):
@@ -48,7 +39,7 @@ def index(request):
 
 def post_detail(request, slug):
     post = Post.objects.popular().get(slug=slug)
-    comments = Comment.objects.filter(post=post).select_related("author")
+    comments = post.comments.select_related("author")
     serialized_comments = []
     for comment in comments:
         serialized_comments.append({

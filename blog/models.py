@@ -52,7 +52,6 @@ class Post(models.Model):
     text = models.TextField('Текст')
     slug = models.SlugField('Название в виде url', max_length=200)
     image = models.ImageField('Картинка')
-    objects = PostQuerySet.as_manager()
     published_at = models.DateTimeField('Дата и время публикации')
     author = models.ForeignKey(
         User,
@@ -68,6 +67,7 @@ class Post(models.Model):
         'Tag',
         related_name='posts',
         verbose_name='Теги')
+    objects = PostQuerySet.as_manager()
 
     def __str__(self):
         return self.title
